@@ -50,3 +50,7 @@ Add `MenuBarController` class to manage the status item:
 - Play/pause → `handleCommand(parts: ["toggle"])`
 - Next → `handleCommand(parts: ["skip"])`
 - Favorite → `handleCommand(parts: ["favorite"])`
+
+## Status
+
+Implemented 2026-02-18. See `swift-player/Sources/xlg-player/main.swift`.
