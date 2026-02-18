@@ -1,0 +1,35 @@
+[project]
+name = "xlg-player"
+version = "0.1.0"
+description = "Apple Music CLI player with MusicKit integration"
+requires-python = ">=3.12"
+dependencies = [
+    "apple-music-python>=1.0.6",
+    "PyJWT>=2.8.0",
+]
+
+[project.scripts]
+xlg-player = "xlg_player.main:main"
+
+[tool.uv]
+package = true
+
+[tool.setuptools.packages.find]
+include = ["xlg_player*"]
+
+[tool.setuptools.package-data]
+xlg_player = ["auth.html"]
+
+[tool.ruff]
+line-length = 170
+
+[tool.pytest.ini_options]
+testpaths = ["xlg_player"]
+python_files = ["*_test.py"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-mock>=3.15.1",
+    "ruff>=0.15.1",
+]

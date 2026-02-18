@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+
+# Tools
+.ruff_cache/
+.pytest_cache/
+
+# Swift
+swift-player/.build/
+swift-player/XlgPlayer.app/
+
+# Node
+streamdeck-plugin/node_modules/
+streamdeck-plugin/com.xlg.player.sdPlugin/bin/
+
+# Local
+.claude/
