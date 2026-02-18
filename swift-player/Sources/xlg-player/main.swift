@@ -9,6 +9,7 @@ struct XlgPlayer {
     @MainActor static var socketSource: DispatchSourceRead?
     @MainActor static var clientSources: [Int32: DispatchSourceRead] = [:]
     nonisolated(unsafe) static var player = ApplicationMusicPlayer.shared
+    @MainActor static var menuBar: MenuBarController?
 
     static func main() {
         let args = CommandLine.arguments
@@ -36,6 +37,7 @@ struct XlgPlayer {
                 return
             }
             await playContent(isPlaylist: isPlaylist, ids: ids)
+            menuBar = MenuBarController()
             startSocketServer()
         }
 
