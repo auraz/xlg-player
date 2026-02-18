@@ -86,6 +86,8 @@ XLG Player (Swift/MusicKit)
 Apple Music
 ```
 
+The Swift player also provides menu bar controls (▶ ⏭ ❤) for quick access.
+
 ## Development
 
 ```bash

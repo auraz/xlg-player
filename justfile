@@ -16,7 +16,9 @@ run *ARGS:
 build-player:
     cd swift-player && swift build -c release
     mkdir -p swift-player/XlgPlayer.app/Contents/MacOS
+    cp swift-player/Info.plist swift-player/XlgPlayer.app/Contents/
     cp swift-player/.build/release/xlg-player swift-player/XlgPlayer.app/Contents/MacOS/
+    find swift-player/XlgPlayer.app -exec xattr -c {} \; 2>/dev/null || true
     codesign --force --sign - swift-player/XlgPlayer.app
 
 install-player:
