@@ -243,3 +243,88 @@ struct XlgPlayer {
         appleScript.executeAndReturnError(&error)
     }
 }
+
+@MainActor
+class MenuBarController {
+    private var statusItem: NSStatusItem!
+    private var playButton: NSButton!
+    private var nextButton: NSButton!
+    private var favButton: NSButton!
+    private var updateTimer: Timer?
+
+    init() {
+        setupStatusItem()
+        startUpdateTimer()
+    }
+
+    private func setupStatusItem() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+
+        let stackView = NSStackView()
+        stackView.orientation = .horizontal
+        stackView.spacing = 4
+
+        playButton = makeButton(symbol: "play.fill", action: #selector(togglePlay))
+        nextButton = makeButton(symbol: "forward.fill", action: #selector(skipNext))
+        favButton = makeButton(symbol: "heart", action: #selector(toggleFavorite))
+
+        stackView.addArrangedSubview(playButton)
+        stackView.addArrangedSubview(nextButton)
+        stackView.addArrangedSubview(favButton)
+
+        statusItem.button?.addSubview(stackView)
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: statusItem.button!.leadingAnchor, constant: 4),
+            stackView.trailingAnchor.constraint(equalTo: statusItem.button!.trailingAnchor, constant: -4),
+            stackView.centerYAnchor.constraint(equalTo: statusItem.button!.centerYAnchor)
+        ])
+    }
+
+    private func makeButton(symbol: String, action: Selector) -> NSButton {
+        let button = NSButton()
+        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        button.image?.isTemplate = true
+        button.bezelStyle = .inline
+        button.isBordered = false
+        button.target = self
+        button.action = action
+        button.widthAnchor.constraint(equalToConstant: 24).isActive = true
+        return button
+    }
+
+    private func startUpdateTimer() {
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.updateButtonStates() }
+        }
+    }
+
+    private func updateButtonStates() {
+        let isPlaying = XlgPlayer.player.state.playbackStatus == .playing
+        playButton.image = NSImage(systemSymbolName: isPlaying ? "pause.fill" : "play.fill", accessibilityDescription: nil)
+        playButton.image?.isTemplate = true
+
+        let isFavorited = checkFavorited()
+        favButton.image = NSImage(systemSymbolName: isFavorited ? "heart.fill" : "heart", accessibilityDescription: nil)
+        favButton.image?.isTemplate = true
+    }
+
+    private func checkFavorited() -> Bool {
+        guard let script = NSAppleScript(source: "tell application \"Music\" to return favorited of current track") else { return false }
+        var error: NSDictionary?
+        let result = script.executeAndReturnError(&error)
+        return error == nil && result.booleanValue
+    }
+
+    @objc private func togglePlay() {
+        Task { _ = await XlgPlayer.handleCommand(parts: ["toggle"]) }
+    }
+
+    @objc private func skipNext() {
+        Task { _ = await XlgPlayer.handleCommand(parts: ["skip"]) }
+    }
+
+    @objc private func toggleFavorite() {
+        Task { _ = await XlgPlayer.handleCommand(parts: ["favorite"]) }
+    }
+}
