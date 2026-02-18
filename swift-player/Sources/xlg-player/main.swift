@@ -244,17 +244,22 @@ struct XlgPlayer {
     }
 }
 
+/// Menu bar controller for playback controls.
 @MainActor
 class MenuBarController {
     private var statusItem: NSStatusItem!
     private var playButton: NSButton!
     private var nextButton: NSButton!
     private var favButton: NSButton!
-    private var updateTimer: Timer?
+    nonisolated(unsafe) private var updateTimer: Timer?
 
     init() {
         setupStatusItem()
         startUpdateTimer()
+    }
+
+    deinit {
+        updateTimer?.invalidate()
     }
 
     private func setupStatusItem() {
@@ -272,12 +277,13 @@ class MenuBarController {
         stackView.addArrangedSubview(nextButton)
         stackView.addArrangedSubview(favButton)
 
-        statusItem.button?.addSubview(stackView)
+        guard let button = statusItem.button else { return }
+        button.addSubview(stackView)
         stackView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: statusItem.button!.leadingAnchor, constant: 4),
-            stackView.trailingAnchor.constraint(equalTo: statusItem.button!.trailingAnchor, constant: -4),
-            stackView.centerYAnchor.constraint(equalTo: statusItem.button!.centerYAnchor)
+            stackView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 4),
+            stackView.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -4),
+            stackView.centerYAnchor.constraint(equalTo: button.centerYAnchor)
         ])
     }
 
