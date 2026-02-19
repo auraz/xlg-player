@@ -156,6 +156,11 @@ struct XlgPlayer {
             if usingMusicKit { try? await player.skipToPreviousEntry() } else { runAppleScript("tell application \"Music\" to previous track") }
             return "OK\n"
         case "favorite", "love":
+            if usingMusicKit, let entry = player.queue.currentEntry, case .song(let song) = entry.item {
+                let songId = song.id.rawValue
+                await addToLibrary(songId: songId)
+                return "OK\n"
+            }
             runAppleScript("tell application \"Music\"\nset f to favorited of current track\nset favorited of current track to not f\nend tell")
             return "OK\n"
         case "volume":
@@ -243,6 +248,32 @@ struct XlgPlayer {
         guard let appleScript = NSAppleScript(source: script) else { return }
         var error: NSDictionary?
         appleScript.executeAndReturnError(&error)
+    }
+
+    static func addToLibrary(songId: String) async {
+        let configPath = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/xlg/config")
+        guard let config = try? String(contentsOf: configPath, encoding: .utf8) else { return }
+        var userToken: String?
+        for line in config.split(separator: "\n") {
+            if line.hasPrefix("APPLE_MUSIC_USER_TOKEN=") {
+                userToken = String(line.dropFirst("APPLE_MUSIC_USER_TOKEN=".count))
+            }
+        }
+        guard let mut = userToken else {
+            print("No APPLE_MUSIC_USER_TOKEN")
+            return
+        }
+        guard let url = URL(string: "https://api.music.apple.com/v1/me/library?ids[songs]=\(songId)") else { return }
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue(mut, forHTTPHeaderField: "Music-User-Token")
+        let dataRequest = MusicDataRequest(urlRequest: urlRequest)
+        do {
+            let _ = try await dataRequest.response()
+            print("Added to library: \(songId)")
+        } catch {
+            print("Add to library failed: \(error)")
+        }
     }
 }
 
