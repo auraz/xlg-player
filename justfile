@@ -23,6 +23,7 @@ build-player:
 
 install-player:
     cp -r swift-player/XlgPlayer.app ~/Applications/
+    ln -sf ~/Applications/XlgPlayer.app/Contents/MacOS/xlg-player ~/.local/bin/xlg-player-swift
 
 build-streamdeck:
     cd streamdeck-plugin && npm install && npm run build
