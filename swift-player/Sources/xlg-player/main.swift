@@ -259,18 +259,14 @@ struct XlgPlayer {
                 userToken = String(line.dropFirst("APPLE_MUSIC_USER_TOKEN=".count))
             }
         }
-        guard let mut = userToken else {
-            print("No APPLE_MUSIC_USER_TOKEN")
-            return
-        }
+        guard let mut = userToken else { return }
         guard let url = URL(string: "https://api.music.apple.com/v1/me/library?ids[songs]=\(songId)") else { return }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue(mut, forHTTPHeaderField: "Music-User-Token")
         let dataRequest = MusicDataRequest(urlRequest: urlRequest)
         do {
-            let _ = try await dataRequest.response()
-            print("Added to library: \(songId)")
+            _ = try await dataRequest.response()
         } catch {
             print("Add to library failed: \(error)")
         }
