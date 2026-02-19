@@ -250,9 +250,6 @@ struct XlgPlayer {
 @MainActor
 class MenuBarController {
     private var statusItem: NSStatusItem!
-    private var playButton: NSButton!
-    private var nextButton: NSButton!
-    private var favButton: NSButton!
     nonisolated(unsafe) private var updateTimer: Timer?
 
     init() {
@@ -266,39 +263,25 @@ class MenuBarController {
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-
-        let stackView = NSStackView()
-        stackView.orientation = .horizontal
-        stackView.spacing = 4
-
-        playButton = makeButton(symbol: "play.fill", action: #selector(togglePlay))
-        nextButton = makeButton(symbol: "forward.fill", action: #selector(skipNext))
-        favButton = makeButton(symbol: "heart", action: #selector(toggleFavorite))
-
-        stackView.addArrangedSubview(playButton)
-        stackView.addArrangedSubview(nextButton)
-        stackView.addArrangedSubview(favButton)
-
         guard let button = statusItem.button else { return }
-        button.addSubview(stackView)
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 4),
-            stackView.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -4),
-            stackView.centerYAnchor.constraint(equalTo: button.centerYAnchor)
-        ])
+        if let image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "XLG Player") {
+            image.isTemplate = true
+            button.image = image
+        } else {
+            button.title = "♪"
+        }
+
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Play/Pause", action: #selector(togglePlay), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Next", action: #selector(skipNext), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Favorite", action: #selector(toggleFavorite), keyEquivalent: "").target = self
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(withTitle: "Quit", action: #selector(quitApp), keyEquivalent: "q").target = self
+        statusItem.menu = menu
     }
 
-    private func makeButton(symbol: String, action: Selector) -> NSButton {
-        let button = NSButton()
-        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-        button.image?.isTemplate = true
-        button.bezelStyle = .inline
-        button.isBordered = false
-        button.target = self
-        button.action = action
-        button.widthAnchor.constraint(equalToConstant: 24).isActive = true
-        return button
+    @objc private func quitApp() {
+        NSApplication.shared.terminate(nil)
     }
 
     private func startUpdateTimer() {
@@ -309,12 +292,10 @@ class MenuBarController {
 
     private func updateButtonStates() {
         let isPlaying = XlgPlayer.player.state.playbackStatus == .playing
-        playButton.image = NSImage(systemSymbolName: isPlaying ? "pause.fill" : "play.fill", accessibilityDescription: nil)
-        playButton.image?.isTemplate = true
-
-        let isFavorited = checkFavorited()
-        favButton.image = NSImage(systemSymbolName: isFavorited ? "heart.fill" : "heart", accessibilityDescription: nil)
-        favButton.image?.isTemplate = true
+        if let image = NSImage(systemSymbolName: isPlaying ? "pause.fill" : "play.fill", accessibilityDescription: nil) {
+            image.isTemplate = true
+            statusItem.button?.image = image
+        }
     }
 
     private func checkFavorited() -> Bool {
