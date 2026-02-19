@@ -171,6 +171,9 @@ struct XlgPlayer {
             return "OK\n"
         case "status":
             return getStatusJson() + "\n"
+        case "quit", "exit":
+            NSApplication.shared.terminate(nil)
+            return "OK\n"
         case "--playlist":
             let ids = Array(parts.dropFirst())
             await playContent(isPlaylist: true, ids: ids)
@@ -276,40 +279,46 @@ struct XlgPlayer {
 /// Menu bar controller for playback controls.
 @MainActor
 class MenuBarController {
-    private var statusItem: NSStatusItem!
+    private var playItem: NSStatusItem!
+    private var nextItem: NSStatusItem!
+    private var favoriteItem: NSStatusItem!
     nonisolated(unsafe) private var updateTimer: Timer?
 
     init() {
-        setupStatusItem()
+        setupStatusItems()
         startUpdateTimer()
     }
 
-    deinit {
-        updateTimer?.invalidate()
-    }
+    deinit { updateTimer?.invalidate() }
 
-    private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        guard let button = statusItem.button else { return }
-        if let image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "XLG Player") {
-            image.isTemplate = true
-            button.image = image
-        } else {
-            button.title = "♪"
+    private func setupStatusItems() {
+        favoriteItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        nextItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        playItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+
+        if let btn = playItem.button {
+            btn.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "Play")
+            btn.image?.isTemplate = true
+            btn.action = #selector(togglePlay)
+            btn.target = self
         }
 
-        let menu = NSMenu()
-        menu.addItem(withTitle: "Play/Pause", action: #selector(togglePlay), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "Next", action: #selector(skipNext), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "Favorite", action: #selector(toggleFavorite), keyEquivalent: "").target = self
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(withTitle: "Quit", action: #selector(quitApp), keyEquivalent: "q").target = self
-        statusItem.menu = menu
+        if let btn = nextItem.button {
+            btn.image = NSImage(systemSymbolName: "forward.fill", accessibilityDescription: "Next")
+            btn.image?.isTemplate = true
+            btn.action = #selector(skipNext)
+            btn.target = self
+        }
+
+        if let btn = favoriteItem.button {
+            btn.image = NSImage(systemSymbolName: "heart", accessibilityDescription: "Favorite")
+            btn.image?.isTemplate = true
+            btn.action = #selector(toggleFavorite)
+            btn.target = self
+        }
     }
 
-    @objc private func quitApp() {
-        NSApplication.shared.terminate(nil)
-    }
+    @objc private func quitApp() { NSApplication.shared.terminate(nil) }
 
     private func startUpdateTimer() {
         updateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -319,28 +328,11 @@ class MenuBarController {
 
     private func updateButtonStates() {
         let isPlaying = XlgPlayer.player.state.playbackStatus == .playing
-        if let image = NSImage(systemSymbolName: isPlaying ? "pause.fill" : "play.fill", accessibilityDescription: nil) {
-            image.isTemplate = true
-            statusItem.button?.image = image
-        }
+        playItem.button?.image = NSImage(systemSymbolName: isPlaying ? "pause.fill" : "play.fill", accessibilityDescription: nil)
+        playItem.button?.image?.isTemplate = true
     }
 
-    private func checkFavorited() -> Bool {
-        guard let script = NSAppleScript(source: "tell application \"Music\" to return favorited of current track") else { return false }
-        var error: NSDictionary?
-        let result = script.executeAndReturnError(&error)
-        return error == nil && result.booleanValue
-    }
-
-    @objc private func togglePlay() {
-        Task { _ = await XlgPlayer.handleCommand(parts: ["toggle"]) }
-    }
-
-    @objc private func skipNext() {
-        Task { _ = await XlgPlayer.handleCommand(parts: ["skip"]) }
-    }
-
-    @objc private func toggleFavorite() {
-        Task { _ = await XlgPlayer.handleCommand(parts: ["favorite"]) }
-    }
+    @objc private func togglePlay() { Task { _ = await XlgPlayer.handleCommand(parts: ["toggle"]) } }
+    @objc private func skipNext() { Task { _ = await XlgPlayer.handleCommand(parts: ["skip"]) } }
+    @objc private func toggleFavorite() { Task { _ = await XlgPlayer.handleCommand(parts: ["favorite"]) } }
 }

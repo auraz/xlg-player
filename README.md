@@ -21,7 +21,8 @@ xlg-player previous                     # Previous track
 xlg-player volume 50                    # Set volume
 xlg-player volume +10                   # Volume up
 xlg-player status                       # JSON status
-xlg-player favorite                     # Toggle favorite
+xlg-player favorite                     # Add to library
+xlg-player quit                         # Quit player
 ```
 
 ## Setup
@@ -86,7 +87,7 @@ XLG Player (Swift/MusicKit)
 Apple Music
 ```
 
-The Swift player also provides menu bar controls (▶ ⏭ ❤) for quick access.
+The Swift player shows 3 menu bar buttons: ▶ (play/pause), ⏭ (next), ♡ (add to library).
 
 ## Development
 
